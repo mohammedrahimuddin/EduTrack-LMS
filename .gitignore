@@ -1,0 +1,23 @@
+.venv/
+venv/
+mlenv*/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.streamlit/
+artifacts/*.joblib
+artifacts/*.pkl
+data/raw/*.csv
+data/raw/*.json
+!data/raw/.gitkeep
+# Python virtual environments and editor files
+.env
+.vscode/
+# Processed student-level datasets
+data/processed/*.csv
+
+# Student-level analysis exports
+reports/*.csv
+# Old recommendation model artifacts
+artifacts/training_summary.json
+artifacts/metrics.json

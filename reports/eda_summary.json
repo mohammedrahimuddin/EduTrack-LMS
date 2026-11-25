@@ -1,0 +1,23 @@
+{
+  "total_students": 1000,
+  "total_records": 1000,
+  "at_risk_students": 150,
+  "not_at_risk_students": 850,
+  "average_pre_test_score": 50.08,
+  "average_post_test_score": 64.95,
+  "average_score_improvement": 14.87,
+  "average_completion_pct": 54.24,
+  "average_engagement_score": 0.544,
+  "average_post_test_by_subject": {
+    "Chemistry": 64.04,
+    "Data Science": 65.75,
+    "Design Thinking": 62.51,
+    "Digital Marketing": 64.68,
+    "English Grammar": 63.51,
+    "Finance": 65.33,
+    "Mathematics": 66.06,
+    "Physics": 65.95,
+    "Python Programming": 64.91,
+    "Web Development": 66.25
+  }
+}

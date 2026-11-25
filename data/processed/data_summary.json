@@ -1,0 +1,11 @@
+{
+  "performance_records": 1000,
+  "engagement_records": 600,
+  "test_cases": 50,
+  "learning_dataset_rows": 1000,
+  "risk_dataset_rows": 1000,
+  "risk_test_rows": 50,
+  "students": 1000,
+  "subjects": 10,
+  "engagement_students": 459
+}

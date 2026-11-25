@@ -1,0 +1,56 @@
+{
+  "model": "RandomForestClassifier",
+  "training_records": 1000,
+  "independent_test_records": 50,
+  "features": [
+    "lessons_completed",
+    "avg_time_per_lesson_mins",
+    "quiz_attempts",
+    "streak_days"
+  ],
+  "target": "label_at_risk",
+  "metrics": {
+    "accuracy": 0.46,
+    "precision": 0.6364,
+    "recall": 0.2333,
+    "f1_score": 0.3415,
+    "test_cases": 50,
+    "confusion_matrix": [
+      [
+        16,
+        4
+      ],
+      [
+        23,
+        7
+      ]
+    ]
+  },
+  "classification_report": {
+    "Not At Risk": {
+      "precision": 0.41025641025641024,
+      "recall": 0.8,
+      "f1-score": 0.5423728813559322,
+      "support": 20.0
+    },
+    "At Risk": {
+      "precision": 0.6363636363636364,
+      "recall": 0.23333333333333334,
+      "f1-score": 0.34146341463414637,
+      "support": 30.0
+    },
+    "accuracy": 0.46,
+    "macro avg": {
+      "precision": 0.5233100233100233,
+      "recall": 0.5166666666666667,
+      "f1-score": 0.44191814799503926,
+      "support": 50.0
+    },
+    "weighted avg": {
+      "precision": 0.5459207459207459,
+      "recall": 0.46,
+      "f1-score": 0.42182720132286067,
+      "support": 50.0
+    }
+  }
+}
