@@ -1,109 +1,252 @@
-# System Architecture — EduTrack LMS
+﻿# System Architecture â€” EduTrack LMS
 
-## 1. Overview
+## 1. Project Overview
 
-EduTrack LMS is an AI-powered learning support system that processes student performance and content engagement data to support at-risk student identification and personalized learning recommendations.
+EduTrack LMS is a machine learning-based student support system designed to identify students who may be academically at risk using student performance and learning activity data.
 
-## 2. System Architecture
+The current implemented system uses a Random Forest classifier for at-risk prediction and provides prediction functionality through a FastAPI backend and Streamlit dashboard.
+
+The project also includes a data preprocessing pipeline that prepares student performance, content engagement, and independent test datasets.
+
+## 2. High-Level System Architecture
 
 ```text
-Official Student Performance CSV
-              |
-              v
-       Data Validation
-              |
-              v
-     Data Preprocessing
-              |
-       +------+------+
-       |             |
-       v             v
- Risk Dataset   Learning Dataset
-       |             |
-       v             v
- Random Forest   Learning Analysis
- Risk Model      & Recommendations
-       |             |
-       +------+------+
-              |
-              v
-       Prediction Output
-              |
-              v
-        FastAPI Service
-              |
-              v
-      Streamlit Dashboard
+             RAW DATA SOURCES
+                     |
+          +----------+----------+
+          |          |          |
+          v          v          v
+      Student    Engagement   Independent
+     Performance    Data       JSON Tests
+        CSV         CSV
+          |          |
+          +-----+----+
+                |
+                v
+        DATA LOADING & VALIDATION
+                |
+                v
+          DATA PREPROCESSING
+                |
+          +-----+------+
+          |            |
+          v            v
+   Risk Dataset   Learning Dataset
+          |            |
+          v            v
+   Random Forest   Prepared Learning
+   Classification     Data Output
+          |
+          v
+   Model Evaluation
+          |
+          +------------------+
+          |                  |
+          v                  v
+   Saved Model         Metrics & Summary
+   (Joblib)             (JSON)
+          |
+          v
+      FastAPI Backend
+          |
+       /predict
+          |
+          v
+    Streamlit Dashboard
+          |
+          v
+   Student Risk Result
 ```
+
+Note: The learning dataset is prepared and saved separately. A personalized recommendation model is not currently verified in the implementation.
 
 ## 3. Data Sources
 
-The system uses three official data files:
+The project uses three input files:
 
-- `aiml_student_performance.csv`
-- `aiml_content_engagement.csv`
-- `aiml_edtech_tests.json`
+| Dataset | Description | Records |
+|---|---|---:|
+| `aiml_student_performance.csv` | Student academic and learning performance | 1,000 |
+| `aiml_content_engagement.csv` | Student interactions with learning content | 600 |
+| `aiml_edtech_tests.json` | Independent prediction test cases | 50 |
 
-The student performance dataset contains 1,000 records and includes academic performance, learning activity and the `label_at_risk` target.
+### Student Performance Features
 
-The content engagement dataset contains 600 records describing student interactions with learning content.
+The performance dataset contains student information, academic scores, lesson completion, quiz activity, learning streaks, and the target label.
 
-The JSON file contains 50 independent test cases for at-risk prediction.
+Target column: `label_at_risk`
 
-## 4. Data Processing
+- 0: Not at Risk
+- 1: At Risk
 
-The data loader performs the following operations:
+### Engagement Features
 
-1. Loads the official CSV and JSON files.
-2. Validates required columns and data types.
-3. Checks student records and target labels.
-4. Aggregates content engagement information.
-5. Combines performance and engagement information using student ID and subject.
-6. Creates processed learning and risk datasets.
+The engagement dataset includes:
 
-Engagement data is available for only 57 matching student-subject records out of 1,000. Missing matches must be distinguished from genuine zero engagement.
+- Content type
+- Time spent
+- Completion status
+- Replays
+- Paused count
+- Likes
+- Notes taken
+- Difficulty rating
+- Engagement score
 
-## 5. Machine Learning Model
+## 4. Data Processing Architecture
 
-The initial risk prediction model uses a Random Forest Classifier.
+The data pipeline is implemented in `src/data_loader.py`.
 
-Input features:
+The pipeline contains the following stages:
 
-- `lessons_completed`
-- `avg_time_per_lesson_mins`
-- `quiz_attempts`
-- `streak_days`
+1. **Data ingestion:** Loads performance CSV, engagement CSV, and independent JSON test cases.
+2. **Column validation:** Checks required columns in each dataset.
+3. **Record validation:** Checks empty datasets, missing student IDs, and missing subjects.
+4. **Data type validation:** Converts numeric columns and validates binary target labels.
+5. **Engagement aggregation:** Groups engagement records by student ID and subject.
+6. **Data integration:** Joins aggregated engagement data with student performance records.
+7. **Missing-value handling:** Creates an engagement availability indicator and fills missing aggregate values.
+8. **Risk dataset preparation:** Selects the four model features and target label.
+9. **Processed data storage:** Saves the prepared datasets and data summary.
 
-Target:
+### Generated Processed Files
 
-- `label_at_risk`
+| File | Purpose |
+|---|---|
+| `learning_dataset.csv` | Performance data combined with engagement summaries |
+| `risk_dataset.csv` | Features and labels for Random Forest training |
+| `risk_test_dataset.csv` | Independent JSON test cases converted to CSV |
+| `data_summary.json` | Dataset processing summary |
 
-The model is trained using the official performance dataset and evaluated against the independent 50-case JSON test dataset.
+## 5. At-Risk Prediction Model
 
-The initial independent test accuracy was 0.46. Further model improvement and validation are required.
+The project uses a Random Forest Classifier implemented in `src/train.py`.
 
-## 6. API and Dashboard
+### Model Configuration
 
-**FastAPI:** Intended to expose prediction and system endpoints.
+| Parameter | Value |
+|---|---:|
+| Algorithm | Random Forest Classifier |
+| Number of Estimators | 300 |
+| Maximum Depth | 8 |
+| Minimum Samples per Leaf | 3 |
+| Class Weight | Balanced |
+| Random State | 42 |
 
-**Streamlit:** Intended to provide a user-facing dashboard for viewing student information and prediction results.
+### Input Features
 
-The API and dashboard integration must be verified against the current implementation before claiming production readiness.
+The model uses four features:
 
-## 7. Limitations
+1. `lessons_completed`
+2. `avg_time_per_lesson_mins`
+3. `quiz_attempts`
+4. `streak_days`
 
-- The original at-risk label-generation rule is unknown.
-- Test scores have a strong association with the target label, creating potential target leakage if used as prediction features.
-- The independent test dataset contains only four prediction features.
-- Engagement-data matching coverage is limited.
-- Initial independent test performance is weak.
+### Target Variable
 
-## 8. Future Improvements
+`label_at_risk`
 
-- Investigate and document the original label-generation process.
-- Improve model precision, recall and F1-score.
-- Validate the model on additional independent data.
+The model is trained using the processed risk dataset and evaluated using the independent JSON test dataset.
+
+### Model Artifacts
+
+The trained model and evaluation results are stored in the `artifacts/` directory:
+
+- `risk_model.joblib`
+- `risk_metrics.json`
+- `risk_training_summary.json`
+
+## 6. Model Evaluation Architecture
+
+The training implementation calculates:
+
+- Accuracy
+- Precision
+- Recall
+- F1-score
+- Confusion Matrix
+- Classification Report
+
+Evaluation results are stored in JSON files for further inspection.
+
+The independent test dataset contains 50 cases. The initial recorded accuracy was 0.46.
+
+Further validation is necessary because the independent test performance is currently weak.
+
+ROC-AUC is a potential additional evaluation metric but is not currently calculated by the training implementation.
+
+## 7. Backend Architecture
+
+The backend is implemented using FastAPI in `src/api.py`.
+
+### Available Endpoints
+
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/health` | GET | Checks API health and model availability |
+| `/predict` | POST | Predicts student at-risk status |
+| `/retrain` | POST | Triggers model retraining |
+
+The prediction endpoint accepts four input features and returns:
+
+- Prediction label
+- Risk classification
+- Model risk score
+
+The risk score is an uncalibrated model estimate and should not be interpreted as a confirmed probability.
+
+## 8. Dashboard Architecture
+
+The frontend dashboard is implemented using Streamlit in `app/streamlit_app.py`.
+
+Dashboard functionality:
+
+- Student learning input form.
+- API URL configuration.
+- Prediction request to FastAPI.
+- Display of at-risk or not-at-risk results.
+- Display of model risk score.
+- API error handling.
+
+The dashboard communicates with the backend using HTTP requests.
+
+## 9. Testing Architecture
+
+Automated tests are available in `tests/test_risk_model.py`.
+
+The current test suite checks:
+
+1. Random Forest model training.
+2. Prediction output length and valid labels.
+3. Prediction probability output shape and value range.
+
+Testing is performed using Pytest.
+
+## 10. Current Limitations
+
+- The original target-label generation rule is unknown.
+- Potential target leakage must be investigated.
+- Engagement data matches only 57 of 1,000 student-subject records.
+- Engagement information is prepared separately and is not currently used as input to the Random Forest model.
+- Independent test performance requires improvement.
+- ROC-AUC is not currently implemented in the training script.
+- A personalized course recommendation model is not currently present in the verified Python implementation.
+- API and dashboard require further integration testing.
+
+## 11. Future Architecture Improvements
+
+- Improve independent model evaluation.
+- Investigate target-label generation and potential leakage.
 - Improve engagement-data integration.
-- Develop and validate personalized learning recommendations.
-- Test API performance and dashboard usability.
-- Monitor model performance after deployment.
+- Add ROC-AUC and other suitable evaluation metrics.
+- Expand automated testing.
+- Develop and evaluate a personalized recommendation component.
+- Validate the system with additional independent datasets.
+
+---
+
+**Project:** EduTrack LMS
+**Domain:** Artificial Intelligence and Machine Learning in Education
+**Primary Model:** Random Forest Classifier
+**Backend:** FastAPI
+**Dashboard:** Streamlit
